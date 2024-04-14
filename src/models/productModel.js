@@ -10,7 +10,7 @@ const productSchema = new mongoose.Schema({
       required: true,
     },
     quantity:{
-        type: Int16Array,
+        type: Number,
         required:true
     },
     seller: {
@@ -19,6 +19,6 @@ const productSchema = new mongoose.Schema({
     },
   });
 
-  const Product = mongoose.model('product',productSchema);
+  const Product = mongoose.model('Product',productSchema);
 
   module.exports = Product;
