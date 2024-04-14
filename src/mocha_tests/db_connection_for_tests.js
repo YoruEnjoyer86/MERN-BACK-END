@@ -20,4 +20,10 @@ before(function(done){
       console.log('Connected to MongoDB');
       done() ;
     });
-})
+}) ;
+
+beforeEach(function(done){ //inainte de fiecare test
+  mongoose.connection.collections.products.drop(function(){
+    done() ;
+  }) ;
+}) ;

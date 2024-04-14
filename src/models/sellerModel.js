@@ -13,15 +13,20 @@ const productSchema = new mongoose.Schema({
         type: Number,
         required:true
     },
-    seller: {
+  });
+
+  const sellerSchema = new mongoose.Schema({
+    name: {
       type: String,
       required: true,
     },
+    city:{
+        type: String,
+        require: true
+    },
+    products: [productSchema]
   });
 
-  const Product = mongoose.model('Product',productSchema);
+  const Seller = mongoose.model('Seller',sellerSchema);
 
-  //schema pt recorduri
-  //model pt collection
-
-  module.exports = Product;
+  module.exports = Seller;
