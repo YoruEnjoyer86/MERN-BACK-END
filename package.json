@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test":"mocha src/mocha_tests"
+    "test": "mocha src/mocha_tests"
   },
   "keywords": [],
   "author": "",
@@ -15,10 +15,11 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "mocha": "^10.4.0",
+    "mongodb": "^6.5.0",
     "mongoose": "^6.9.0"
   },
   "devDependencies": {
     "eslint": "^8.33.0",
-    "nodemon": "^2.0.20"
+    "nodemon": "^3.1.0"
   }
 }
