@@ -2,6 +2,7 @@ const express = require("express");
 const database = require("./config/database");
 const eventRoutes = require("./routes/eventRoutes");
 const cors = require("cors");
+const Product = require("./models/productModel");
 
 const app = express();
 app.use(express.json());
@@ -17,18 +18,14 @@ app.get("/", (req, res) => {
   res.send("PAGINA DE BACKEND!");
 });
 
-app.get("/api/products", (req, res) => {
-  const placeHolderImage = "../../../public/item.png";
-  const products = [
-    { name: "Bec", image: placeHolderImage },
-    { name: "Lingura", image: placeHolderImage },
-    { name: "Hartie", image: placeHolderImage },
-    { name: "Stilou", image: placeHolderImage },
-    { name: "Pix", image: placeHolderImage },
-    { name: "Coca-Cola", image: placeHolderImage },
-    { name: "Pepsi", image: placeHolderImage },
-    { name: "Ciuperca", image: placeHolderImage },
-    { name: "Priza", image: placeHolderImage },
-  ];
+app.get("/api/products", async (req, res) => {
+  const products = await Product.find().exec();
   res.json(products);
+});
+
+app.post("/api/add_product", async (req, res) => {
+  //console.log(req.body.product);
+  const productToAdd = new Product(JSON.parse(req.body.product));
+  await productToAdd.save();
+  res.send("Backendul a primit post request pt adaugare obiect!");
 });
