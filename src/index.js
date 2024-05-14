@@ -31,9 +31,30 @@ app.get("/api/products", async (req, res) => {
 
 app.post("/api/add_product", async (req, res) => {
   //console.log(req.body.product);
+  const productObject = JSON.parse(req.body.product);
   const productToAdd = new Product(JSON.parse(req.body.product));
   await productToAdd.save();
-  res.send("Backendul a primit post request pt adaugare obiect!");
+
+  let imagePath = path.join(
+    product_images_folder,
+    productObject.name + "_" + productObject.seller + ".png"
+  );
+
+  const file = fs.createWriteStream(imagePath);
+  axios({
+    url: productObject.img_src,
+    responseType: "stream",
+  }).then((response) => {
+    response.data.pipe(file); //pune in fisier informatia binara
+    file.on("finish", () => {
+      file.close();
+      res.send("Descarcat imaginea produsului cu succes!");
+    });
+    file.on("error", (err) => {
+      fs.unlink(imagePath);
+      res.send("Descarcarea imaginii produsului a esuat");
+    });
+  });
 });
 
 app.post("/api/get_product_image", async (req, res) => {
@@ -59,28 +80,4 @@ app.post("/api/get_product_image", async (req, res) => {
       ok: false,
       error: "INVALID PRODUCT, NO SELLER : " + productDetails.name,
     });
-});
-
-app.post("/api/download_product_image", async (req, res) => {
-  const imageUrl = req.body.img_src;
-  let imagePath = path.join(
-    product_images_folder,
-    req.body.name + "_" + req.body.seller + ".png"
-  );
-
-  const file = fs.createWriteStream(imagePath);
-  axios({
-    url: imageUrl,
-    responseType: "stream",
-  }).then((response) => {
-    response.data.pipe(file); //pune in fisier informatia binara
-    file.on("finish", () => {
-      file.close();
-      res.send("Descarcat imaginea produsului cu succes!");
-    });
-    file.on("error", (err) => {
-      fs.unlink(imagePath);
-      res.send("Descarcarea imaginii produsului a esuat");
-    });
-  });
 });
