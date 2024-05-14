@@ -33,7 +33,6 @@ app.post("/api/add_product", async (req, res) => {
   //console.log(req.body.product);
   const productObject = JSON.parse(req.body.product);
   const productToAdd = new Product(JSON.parse(req.body.product));
-  await productToAdd.save();
 
   let imagePath = path.join(
     product_images_folder,
@@ -46,8 +45,9 @@ app.post("/api/add_product", async (req, res) => {
     responseType: "stream",
   }).then((response) => {
     response.data.pipe(file); //pune in fisier informatia binara
-    file.on("finish", () => {
+    file.on("finish", async () => {
       file.close();
+      await productToAdd.save();
       res.send("Descarcat imaginea produsului cu succes!");
     });
     file.on("error", (err) => {
