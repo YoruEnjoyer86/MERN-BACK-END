@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { error } = require("console");
 const axios = require("axios");
+const bodyParser = require("body-parser");
 
 const product_images_folder = "./product_images";
 
@@ -14,6 +15,10 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.use("/events", eventRoutes);
+
+//payload too big ??? de ce???
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb" }));
 
 const port = 3001;
 app.listen(port, () => {
@@ -34,9 +39,11 @@ app.post("/api/add_product", async (req, res) => {
   const productObject = JSON.parse(req.body.product);
   const productToAdd = new Product(JSON.parse(req.body.product));
 
+  let imgType = productObject.img_src.split("/")[1].split(";")[0];
+
   let imagePath = path.join(
     product_images_folder,
-    productObject.name + "_" + productObject.seller + ".png"
+    productObject.name + "_" + productObject.seller + "." + imgType
   );
 
   const file = fs.createWriteStream(imagePath);
@@ -59,25 +66,33 @@ app.post("/api/add_product", async (req, res) => {
 
 app.post("/api/get_product_image", async (req, res) => {
   const productDetails = JSON.parse(req.body.productDetails);
-  if (productDetails.seller != undefined) {
+  let errorMSG =
+    "INVALID PRODUCT, COULD NOT FIND PRODUCT IMAGE : " + productDetails.name;
+  let foundImage = false;
+  let imageTypes = ["png", "jpeg", "webp"];
+  let uri;
+  for (let i = 0; i < imageTypes.length; i++) {
     let imagePath = path.join(
       product_images_folder,
-      productDetails.name + "_" + productDetails.seller + ".png"
+      productDetails.name + "_" + productDetails.seller + "." + imageTypes[i]
     );
-
-    fs.readFile(imagePath, (error, data) => {
-      if (error) console.log(error);
-      else {
-        let mime = "image/png";
-        let encoding = "base64";
-        let uri =
-          "data:" + mime + ";" + encoding + "," + data.toString(encoding);
-        res.json({ ok: true, img: uri });
-      }
-    });
-  } else
+    if (!fs.existsSync(imagePath)) continue;
+    try {
+      let data = fs.readFileSync(imagePath);
+      let mime = "image/" + imageTypes[i];
+      let encoding = "base64";
+      uri = "data:" + mime + ";" + encoding + "," + data.toString(encoding);
+      foundImage = true;
+    } catch (error) {
+      errorMSG =
+        "EROARE LA DESCHIDERE IMAGINE PRODUS(IMAGINEA EXISTA) : " + error;
+    }
+    break;
+  }
+  if (!foundImage)
     res.json({
       ok: false,
-      error: "INVALID PRODUCT, NO SELLER : " + productDetails.name,
+      error: errorMSG,
     });
+  else res.json({ ok: true, img: uri });
 });
