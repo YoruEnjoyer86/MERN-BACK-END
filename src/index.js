@@ -12,8 +12,8 @@ const bodyParser = require("body-parser");
 const product_images_folder = "./product_images";
 
 const app = express();
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 app.use("/events", eventRoutes);
 
 //payload too big ??? de ce???
@@ -29,8 +29,12 @@ app.get("/", (req, res) => {
   res.send("PAGINA DE BACKEND!");
 });
 
-app.get("/api/products", async (req, res) => {
-  const products = await Product.find().exec();
+app.post("/api/get_products_of_category", async (req, res) => {
+  const category = req.body.category;
+  const products =
+    category === "everything"
+      ? await Product.find().exec()
+      : await Product.find({ category: category }).exec();
   res.json(products);
 });
 
