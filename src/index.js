@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { error } = require("console");
 const axios = require("axios");
-const bodyParser = require("body-parser");
+const FormData = require("form-data");
 
 const product_images_folder = "./product_images";
 
@@ -15,10 +15,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/events", eventRoutes);
-
-//payload too big ??? de ce???
-app.use(express.json({ limit: "50mb" }));
-app.use(express.urlencoded({ limit: "50mb" }));
 
 const port = 3001;
 app.listen(port, () => {
@@ -40,8 +36,8 @@ app.post("/api/get_products_of_category", async (req, res) => {
 
 app.post("/api/add_product", async (req, res) => {
   //console.log(req.body.product);
-  const productObject = JSON.parse(req.body.product);
-  const productToAdd = new Product(JSON.parse(req.body.product));
+  const productObject = req.body.product;
+  const productToAdd = new Product(req.body.product);
 
   let imgType = productObject.img_src.split("/")[1].split(";")[0];
 
@@ -69,7 +65,7 @@ app.post("/api/add_product", async (req, res) => {
 });
 
 app.post("/api/get_product_image", async (req, res) => {
-  const productDetails = JSON.parse(req.body.productDetails);
+  const productDetails = req.body.productDetails;
   let errorMSG =
     "INVALID PRODUCT, COULD NOT FIND PRODUCT IMAGE : " + productDetails.name;
   let foundImage = false;
