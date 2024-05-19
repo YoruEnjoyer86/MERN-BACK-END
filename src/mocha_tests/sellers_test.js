@@ -9,7 +9,7 @@ describe("Tests for seller model", () => {
       city: "Cluj",
       products: [
         {
-          name: "Cutit",
+          name: "Cutitas",
           description: "Arma alba",
           quantity: 99,
         },
