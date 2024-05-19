@@ -3,26 +3,44 @@ const database = require("./config/database");
 const eventRoutes = require("./routes/eventRoutes");
 const cors = require("cors");
 const Product = require("./models/productModel");
+const Account = require("./models/accountModel");
 const fs = require("fs");
 const path = require("path");
 const { error } = require("console");
 const axios = require("axios");
 const FormData = require("form-data");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
 
 const product_images_folder = "./product_images";
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    methods: ["POST", "GET"],
+    credentials: true,
+  })
+);
 app.use(express.json());
-app.use("/events", eventRoutes);
+//app.use("/events", eventRoutes);
+app.use(cookieParser());
+app.use(
+  session({
+    secret: "secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      maxAge: 1000 * 60 * 60, // e in secunde
+      httpOnly: false,
+    },
+  })
+);
 
 const port = 3001;
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
-});
-
-app.get("/", (req, res) => {
-  res.send("PAGINA DE BACKEND!");
 });
 
 app.post("/api/get_products_of_category", async (req, res) => {
@@ -36,8 +54,16 @@ app.post("/api/get_products_of_category", async (req, res) => {
 
 app.post("/api/add_product", async (req, res) => {
   //console.log(req.body.product);
-  const productObject = req.body.product;
-  const productToAdd = new Product(req.body.product);
+  const productObject = {
+    name: req.body.name,
+    description: req.body.description,
+    quantity: req.body.quantity,
+    seller: req.body.seller,
+    price: req.body.price,
+    category: req.body.category,
+    img_src: req.body.img_src,
+  };
+  const productToAdd = new Product(productObject);
 
   let imgType = productObject.img_src.split("/")[1].split(";")[0];
 
@@ -95,4 +121,56 @@ app.post("/api/get_product_image", async (req, res) => {
       error: errorMSG,
     });
   else res.json({ ok: true, img: uri });
+});
+
+app.post("/api/sign_up", async (req, res) => {
+  const newAccount = new Account({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+  });
+
+  let savedCorrectly = false;
+
+  await newAccount.save().then(() => {
+    savedCorrectly = true;
+  });
+
+  if (savedCorrectly) {
+    req.session.userId = newAccount._id;
+    res.send({ ok: true, message: "Sign Up Successful!" });
+  } else res.send({ ok: true, message: "Sign Up failed!" });
+});
+
+app.post("/api/login", async (req, res) => {
+  const account = await Account.findOne({
+    email: req.body.email,
+    password: req.body.password,
+  });
+
+  if (account === null) res.send({ ok: false, message: "ACCOUNT NOT FOUND!" });
+  else {
+    req.session.userId = account._id;
+    res.send({ ok: true });
+  }
+});
+
+app.get("/check_connected", (req, res) => {
+  if (req.session.userId) res.json({ ok: true });
+  else res.json({ ok: false });
+});
+
+app.get("/profile", async (req, res) => {
+  const accountData = await Account.findById(req.session.userId);
+  return res.json({
+    username: accountData.name,
+    email: accountData.email,
+    nickname: accountData.nickname,
+    phone: accountData.phone_number,
+  });
+});
+
+app.get("/logout", (req, res) => {
+  req.session.userId = undefined;
+  res.send("USER LOGGED OUT!");
 });
