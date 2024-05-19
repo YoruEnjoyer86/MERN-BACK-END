@@ -4,6 +4,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const cors = require("cors");
 const Product = require("./models/productModel");
 const Account = require("./models/accountModel");
+const FavoriteList = require("./models/favoriteListModel");
 const fs = require("fs");
 const path = require("path");
 const { error } = require("console");
@@ -11,6 +12,7 @@ const axios = require("axios");
 const FormData = require("form-data");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
+const mongoose = require("mongoose");
 
 const product_images_folder = "./product_images";
 
@@ -124,6 +126,7 @@ app.post("/api/get_product_image", async (req, res) => {
 });
 
 app.post("/api/sign_up", async (req, res) => {
+  let message = "Sign Up failed.";
   const newAccount = new Account({
     name: req.body.name,
     email: req.body.email,
@@ -136,10 +139,21 @@ app.post("/api/sign_up", async (req, res) => {
     savedCorrectly = true;
   });
 
+  const favorites = new FavoriteList({
+    name: "Favorite",
+    products: [],
+    userId: newAccount._id,
+  });
+
+  await favorites.save().catch((err) => {
+    savedCorrectly = false;
+    message = "Error at creating default list of favorites." + err;
+  });
+
   if (savedCorrectly) {
     req.session.userId = newAccount._id;
-    res.send({ ok: true, message: "Sign Up Successful!" });
-  } else res.send({ ok: true, message: "Sign Up failed!" });
+    res.send({ ok: true, message: "Sign Up successful!" });
+  } else res.send({ ok: true, message: message });
 });
 
 app.post("/api/login", async (req, res) => {
@@ -173,4 +187,83 @@ app.get("/profile", async (req, res) => {
 app.get("/logout", (req, res) => {
   req.session.userId = undefined;
   res.send("USER LOGGED OUT!");
+});
+
+app.get("/get_favorite_lists", async (req, res) => {
+  let favoriteLists = await FavoriteList.find({ userId: req.session.userId });
+  if (favoriteLists === null)
+    res.json({ ok: false, message: "Favorite lists not found in database." });
+  else res.json({ ok: true, lists: favoriteLists });
+});
+
+app.post("/get_products_from_favorite_list", async (req, res) => {
+  const favoriteList = await FavoriteList.findOne({
+    userId: req.session.userId,
+    name: req.body.name,
+  });
+  if (!favoriteList)
+    return res.json({
+      ok: false,
+      message: "Favorite list was not found in database!",
+    });
+  let products = [];
+  for (let i = 0; i < favoriteList.products.length; i++) {
+    let actualProduct = await Product.findById(favoriteList.products[i]);
+    products.push(actualProduct);
+  }
+  res.json({ ok: true, products });
+});
+
+app.post("/is_product_favorite", async (req, res) => {
+  let list = await FavoriteList.findOne({
+    userId: req.session.userId,
+    name: "Favorite",
+  });
+  if (!list)
+    return res.json({ ok: false, message: "Favorites list not found." });
+  for (let prodId of list.products)
+    if (prodId == req.body.id) return res.json({ ok: true, isFavorite: true });
+  return res.json({ ok: true, isFavorite: false });
+});
+
+app.post("/add_product_to_favorites", async (req, res) => {
+  message = "";
+  let list = await FavoriteList.findOne({
+    userId: req.session.userId,
+    name: "Favorite",
+  });
+  if (!list)
+    return res.json({ ok: false, message: "Favorites list not found." });
+  let newProductsList = list.products;
+  newProductsList.push(mongoose.Types.ObjectId(req.body.id));
+  await list.updateOne({ products: newProductsList }).catch((err) => {
+    message = err;
+  });
+  if (message === "") res.json({ ok: true });
+  else res.json({ ok: false, message });
+});
+
+app.post("/remove_product_from_favorites", async (req, res) => {
+  message = "";
+  let list = await FavoriteList.findOne({
+    userId: req.session.userId,
+    name: "Favorite",
+  });
+  if (!list)
+    return res.json({ ok: false, message: "Favorites list not found." });
+  let newProductsList = [];
+  let indexToRemove = 0;
+  for (let i = 0; i < list.products.length; i++)
+    if (list.products[i] == req.body.id) {
+      indexToRemove = i;
+      break;
+    }
+  for (let i = 0; i < list.products.length; i++)
+    if (i != indexToRemove) newProductsList.push(list.products[i]);
+  //console.log(newProductsList);
+  await list.updateOne({ products: newProductsList }).catch((err) => {
+    message = err;
+  });
+  if (message === "") res.json({ ok: true });
+  else res.json({ ok: false, message });
 });
