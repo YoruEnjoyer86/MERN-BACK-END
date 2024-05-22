@@ -47,24 +47,10 @@ app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
-let prodName = "";
-let sellerName = "";
-
-const getProdImageToAddName = () => {
-  return prodName + "_" + sellerName;
-};
-
 const storageConfiguration = multer.diskStorage({
-  destination: (req, file, cb) => {
-    //cb vine de la callback
-    cb(null, "./product_images"); //primu param e pt a pasa o eroare, un fel de return asincron
-  },
+  destination: "./product_images",
   filename: (req, file, cb) => {
-    const name = getProdImageToAddName();
-    const extension = path.extname(file.originalname); // path e un modul
-    console.log(path.extname(file.originalname));
-    const newName = name + extension;
-    cb(null, newName);
+    cb(null, file.originalname);
   },
 });
 
@@ -72,11 +58,10 @@ const upload = multer({ storage: storageConfiguration });
 
 app.post(
   "/api/add_product",
+  upload.single("file"), //asa tre sa fie numit fisieru trimis, mai intai o sa fie apelata functia pentru a avea setat sellerName si prodName pt numele fisierului
   async (req, res) => {
-    console.log(req.file);
-    console.log("BODY", req.body);
-    sellerName = req.seller;
-    prodName = req.name;
+    // console.log(req.file);
+    // console.log("BODY", req.body);
     const productObject = {
       name: req.body.name,
       description: req.body.description,
@@ -86,9 +71,11 @@ app.post(
       category: req.body.category,
     };
     const productToAdd = new Product(productObject);
+    await productToAdd.save().catch((err) => {
+      return res.json({ ok: false });
+    });
     res.json({ ok: true });
-  },
-  upload.single("file") //asa tre sa fie numit fisieru trimis, mai intai o sa fie apelata functia pentru a avea setat sellerName si prodName pt numele fisierului
+  }
 );
 
 app.post("/api/get_products_of_category", async (req, res) => {
