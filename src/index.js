@@ -375,3 +375,10 @@ app.post("/remove_product_from_cart", async (req, res) => {
 
   res.json({ ok: true, message: "decreased it" });
 });
+
+app.post("/get_search_results", async (req, res) => {
+  let foundObjects = await Product.find({
+    name: { $regex: "^" + req.body.text, $options: "i" }, //optiunea i e pt case insensitive si .* inseamna 0..inf charact oricare, ^ inseamna de la inceput
+  });
+  return res.json({ results: foundObjects });
+});
