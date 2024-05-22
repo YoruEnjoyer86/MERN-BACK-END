@@ -14,6 +14,7 @@ const FormData = require("form-data");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
+const multer = require("multer");
 
 const product_images_folder = "./product_images";
 
@@ -46,6 +47,50 @@ app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
+let prodName = "";
+let sellerName = "";
+
+const getProdImageToAddName = () => {
+  return prodName + "_" + sellerName;
+};
+
+const storageConfiguration = multer.diskStorage({
+  destination: (req, file, cb) => {
+    //cb vine de la callback
+    cb(null, "./product_images"); //primu param e pt a pasa o eroare, un fel de return asincron
+  },
+  filename: (req, file, cb) => {
+    const name = getProdImageToAddName();
+    const extension = path.extname(file.originalname); // path e un modul
+    console.log(path.extname(file.originalname));
+    const newName = name + extension;
+    cb(null, newName);
+  },
+});
+
+const upload = multer({ storage: storageConfiguration });
+
+app.post(
+  "/api/add_product",
+  async (req, res) => {
+    console.log(req.file);
+    console.log("BODY", req.body);
+    sellerName = req.seller;
+    prodName = req.name;
+    const productObject = {
+      name: req.body.name,
+      description: req.body.description,
+      quantity: req.body.quantity,
+      seller: req.body.seller,
+      price: req.body.price,
+      category: req.body.category,
+    };
+    const productToAdd = new Product(productObject);
+    res.json({ ok: true });
+  },
+  upload.single("file") //asa tre sa fie numit fisieru trimis, mai intai o sa fie apelata functia pentru a avea setat sellerName si prodName pt numele fisierului
+);
+
 app.post("/api/get_products_of_category", async (req, res) => {
   const category = req.body.category;
   const products =
@@ -53,47 +98,6 @@ app.post("/api/get_products_of_category", async (req, res) => {
       ? await Product.find().exec()
       : await Product.find({ category: category }).exec();
   res.json(products);
-});
-
-app.post("/api/add_product", async (req, res) => {
-  //console.log(req.body.product);
-  const productObject = {
-    name: req.body.name,
-    description: req.body.description,
-    quantity: req.body.quantity,
-    seller: req.body.seller,
-    price: req.body.price,
-    category: req.body.category,
-    img_src: req.body.img_src,
-  };
-  const productToAdd = new Product(productObject);
-
-  let imgType = productObject.img_src.split("/")[1].split(";")[0];
-
-  let imagePath = path.join(
-    product_images_folder,
-    productObject.name + "_" + productObject.seller + "." + imgType
-  );
-
-  const file = fs.createWriteStream(imagePath);
-  axios({
-    url: productObject.img_src,
-    responseType: "stream",
-  }).then((response) => {
-    response.data.pipe(file); //pune in fisier informatia binara
-    file.on("finish", async () => {
-      file.close();
-      await productToAdd.save();
-      res.json({ ok: true });
-    });
-    file.on("error", (err) => {
-      fs.unlink(imagePath);
-      res.json({
-        ok: false,
-        message: "Descarcarea imaginii produsului a esuat",
-      });
-    });
-  });
 });
 
 app.post("/api/get_product_image", async (req, res) => {
@@ -374,7 +378,7 @@ app.post("/remove_product_from_cart", async (req, res) => {
       break;
     }
   }
-  console.log(req.body.id);
+  // console.log(req.body.id);
   if (!isInCart) return res.json({ ok: true, message: "was not in cart" });
 
   for (let i = changeIndex; i < cart.productsDetails.length - 1; i++)
