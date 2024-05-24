@@ -6,6 +6,9 @@ const Product = require("./models/productModel");
 const Account = require("./models/accountModel");
 const FavoriteList = require("./models/favoriteListModel");
 const ShoppingCart = require("./models/shopping_cart");
+const MegaCategory = require("./models/megaCategory");
+const Category = require("./models/category");
+const Subcategory = require("./models/subcategory");
 const fs = require("fs");
 const path = require("path");
 const { error } = require("console");
@@ -381,4 +384,26 @@ app.post("/get_search_results", async (req, res) => {
     name: { $regex: "^" + req.body.text, $options: "i" }, //optiunea i e pt case insensitive si .* inseamna 0..inf charact oricare, ^ inseamna de la inceput
   });
   return res.json({ results: foundObjects });
+});
+
+app.post("/get_mega_categories", async (req, res) => {
+  let mega_categories = await MegaCategory.find().exec();
+  res.json({ megaCategories: mega_categories });
+});
+
+app.post("/get_categories", async (req, res) => {
+  let mega_category = req.body.mega_category;
+  let categories = [];
+  for (let i = 0; i < mega_category.categories.length; i++)
+    categories.push(await Category.findById(mega_category.categories[i]));
+  res.json({ categories });
+});
+
+app.post("/get_subcategories", async (req, res) => {
+  let category = req.body.category;
+  // console.log(category.name);
+  let subcategories = [];
+  for (let i = 0; i < category.subcategories.length; i++)
+    subcategories.push(await Subcategory.findById(category.subcategories[i]));
+  res.json({ subcategories });
 });

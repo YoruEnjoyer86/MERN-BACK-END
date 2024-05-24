@@ -12,6 +12,10 @@ const megaCategorySchema = new mongoose.Schema({
       required: true,
     },
   ],
+  imageName: {
+    type: String,
+    required: true,
+  },
 });
 
 const MegaCategory = mongoose.model("MegaCategory", megaCategorySchema);
