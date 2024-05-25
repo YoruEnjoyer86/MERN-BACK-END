@@ -37,9 +37,21 @@ const productSchema = new mongoose.Schema({
     default: Math.floor(Math.random() * 5),
   },
   category: {
-    type: String,
+    type: mongoose.Types.ObjectId,
+    ref: "Category",
     required: false,
     default: "no_category",
+  },
+  mega_category: {
+    type: mongoose.Types.ObjectId,
+    ref: "MegaCategory",
+    required: true,
+  },
+  subcategory: {
+    type: mongoose.Types.ObjectId,
+    ref: "Subcategory",
+    required: false,
+    default: "",
   },
 });
 

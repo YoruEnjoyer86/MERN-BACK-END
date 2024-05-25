@@ -18,6 +18,7 @@ const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
+const Heap = require("heap");
 
 const product_images_folder = "./product_images";
 
@@ -81,13 +82,27 @@ app.post(
   }
 );
 
-app.post("/api/get_products_of_category", async (req, res) => {
-  const category = req.body.category;
-  const products =
-    category === "everything"
-      ? await Product.find().exec()
-      : await Product.find({ category: category }).exec();
-  res.json(products);
+app.post("/get_products_of_any_type_categoryID", async (req, res) => {
+  const categoryType = req.body.categoryType;
+  const catId = req.body.id;
+  let products = [];
+  switch (categoryType) {
+    case 0:
+      products = await Product.find({ subcategory: catId });
+      break;
+    case 1:
+      products = await Product.find({ category: catId });
+      break;
+    case 2:
+      products = await Product.find({ mega_category: catId });
+      break;
+    default:
+      return res.status(400).json({
+        erro:
+          "INVALID CATEGORY TYPE! MUST BE 0,1 OR 2. RECIEVED : " + categoryType,
+      });
+  }
+  res.json({ products });
 });
 
 app.post("/api/get_product_image", async (req, res) => {
@@ -383,7 +398,65 @@ app.post("/get_search_results", async (req, res) => {
   let foundObjects = await Product.find({
     name: { $regex: "^" + req.body.text, $options: "i" }, //optiunea i e pt case insensitive si .* inseamna 0..inf charact oricare, ^ inseamna de la inceput
   });
-  return res.json({ results: foundObjects });
+  let foundObjectsForDisplay = [];
+  if (foundObjects.length > 5)
+    foundObjectsForDisplay = [
+      foundObjects[0],
+      foundObjects[1],
+      foundObjects[2],
+      foundObjects[3],
+      foundObjects[4],
+    ];
+  else foundObjectsForDisplay = foundObjects;
+  let foundCategories = new Map();
+  for (let obj of foundObjects) {
+    if (foundCategories.has(String(obj.mega_category)) == false) {
+      foundCategories.set(String(obj.mega_category), 1);
+    } else
+      foundCategories.set(
+        String(obj.mega_category),
+        foundCategories.get(String(obj.mega_category)) + 1
+      );
+    if (foundCategories.has(String(obj.category)) == false)
+      foundCategories.set(String(obj.category), 1);
+    else
+      foundCategories.set(
+        String(obj.category),
+        foundCategories.get(String(obj.category)) + 1
+      );
+    if (foundCategories.has(String(obj.subcategory)) == false)
+      foundCategories.set(String(obj.subcategory), 1);
+    else
+      foundCategories.set(
+        String(obj.subcategory),
+        foundCategories.get(String(obj.subcategory)) + 1
+      );
+  }
+
+  const maxHeap = new Heap((a, b) => b[1] - a[1]);
+  for (let [key, freq] of foundCategories) {
+    if (key != "undefined") maxHeap.push([key, freq]);
+  }
+  let categoriesIDs = [];
+  while (categoriesIDs.length < 3 && maxHeap.size() !== 0)
+    categoriesIDs.push(maxHeap.pop()[0]);
+  let categoriesToDisplay = [];
+  for (let i = 0; i < categoriesIDs.length; i++) {
+    let found = await MegaCategory.findById(categoriesIDs[i]);
+    if (found == null) found = await Category.findById(categoriesIDs[i]);
+    if (found == null) found = await Subcategory.findById(categoriesIDs[i]);
+    // console.log(
+    //   "TYPE : " +
+    //     typeof found +
+    //     " VALUE : " +
+    //     found +
+    //     " ID : " +
+    //     categoriesIDs[i]
+    // );
+    categoriesToDisplay.push(found);
+  }
+  let result = [...foundObjectsForDisplay, ...categoriesToDisplay];
+  return res.json({ results: result });
 });
 
 app.post("/get_mega_categories", async (req, res) => {
@@ -406,4 +479,20 @@ app.post("/get_subcategories", async (req, res) => {
   for (let i = 0; i < category.subcategories.length; i++)
     subcategories.push(await Subcategory.findById(category.subcategories[i]));
   res.json({ subcategories });
+});
+
+app.post("/get_category_of_any_type_by_id", async (req, res) => {
+  let type = req.body.categoryType;
+  switch (type) {
+    case 0:
+      return res.json({ result: await Subcategory.findById(req.body.id) });
+    case 1:
+      return res.json({ result: await Category.findById(req.body.id) });
+    case 2:
+      return res.json({ result: await MegaCategory.findById(req.body.id) });
+    default:
+      return res
+        .status(400)
+        .json({ error: "TYPE OF THE CATEGORY IS INVALID! MUST BE 0,1, OR 2" });
+  }
 });

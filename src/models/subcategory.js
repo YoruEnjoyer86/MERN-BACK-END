@@ -5,6 +5,14 @@ const subcategorySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  category: {
+    type: mongoose.Types.ObjectId,
+    ref: "Category",
+  },
+  mega_category: {
+    type: mongoose.Types.ObjectId,
+    ref: "MegaCategory",
+  },
 });
 
 const Subcategory = mongoose.model("Subcategory", subcategorySchema);

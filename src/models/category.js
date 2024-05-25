@@ -12,6 +12,11 @@ const categorySchema = new mongoose.Schema({
       required: true,
     },
   ],
+  mega_category: {
+    type: mongoose.Types.ObjectId,
+    ref: "MegaCategory",
+    required: true,
+  },
 });
 
 const Category = mongoose.model("Category", categorySchema);
