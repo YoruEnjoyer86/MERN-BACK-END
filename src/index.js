@@ -72,13 +72,15 @@ app.post(
       quantity: req.body.quantity,
       seller: req.body.seller,
       price: req.body.price,
+      mega_category: req.body.mega_category,
+      subcategory: req.body.subcategory,
       category: req.body.category,
     };
     const productToAdd = new Product(productObject);
     await productToAdd.save().catch((err) => {
       return res.json({ ok: false });
     });
-    res.json({ ok: true });
+    return res.json({ ok: true });
   }
 );
 
@@ -394,6 +396,31 @@ app.post("/remove_product_from_cart", async (req, res) => {
   res.json({ ok: true, message: "decreased it" });
 });
 
+app.post("/get_products_with_name_and_categories", async (req, res) => {
+  if (req.body.text.length == 0) return res.json([]);
+  let foundObjects = [];
+  if (req.body.subcategory != undefined)
+    foundObjects = await Product.find({
+      name: { $regex: "^" + req.body.text, $options: "i" },
+      subcategory: req.body.subcategory._id,
+    });
+  else if (req.body.category != undefined)
+    foundObjects = await Product.find({
+      name: { $regex: "^" + req.body.text, $options: "i" },
+      category: req.body.category._id,
+    });
+  else if (req.body.mega_category != undefined)
+    foundObjects = await Product.find({
+      name: { $regex: "^" + req.body.text, $options: "i" },
+      mega_category: req.body.mega_category._id,
+    });
+  else
+    foundObjects = await Product.find({
+      name: { $regex: "^" + req.body.text, $options: "i" },
+    });
+  res.json(foundObjects);
+});
+
 app.post("/get_search_results", async (req, res) => {
   let foundObjects = await Product.find({
     name: { $regex: "^" + req.body.text, $options: "i" }, //optiunea i e pt case insensitive si .* inseamna 0..inf charact oricare, ^ inseamna de la inceput
@@ -495,4 +522,28 @@ app.post("/get_category_of_any_type_by_id", async (req, res) => {
         .status(400)
         .json({ error: "TYPE OF THE CATEGORY IS INVALID! MUST BE 0,1, OR 2" });
   }
+});
+
+app.get("/get_search_data", (req, res) => {
+  return res.json({ search_data: req.session.search_data });
+});
+
+app.post("/set_search_data", async (req, res) => {
+  let search_data = req.body.search_data;
+  if (search_data.category_of_unknown_type != undefined) {
+    let res = await MegaCategory.findById(
+      search_data.category_of_unknown_type._id
+    );
+    if (res != null) {
+      search_data.mega_category = search_data.category_of_unknown_type;
+    } else {
+      res = await Category.findById(search_data.category_of_unknown_type._id);
+      if (res != null)
+        search_data.category = search_data.category_of_unknown_type;
+      else search_data.subcategory = search_data.category_of_unknown_type;
+    }
+    search_data.category_of_unknown_type = undefined;
+  }
+  req.session.search_data = req.body.search_data;
+  res.json(search_data);
 });
