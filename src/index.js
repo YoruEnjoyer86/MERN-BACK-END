@@ -547,3 +547,17 @@ app.post("/set_search_data", async (req, res) => {
   req.session.search_data = req.body.search_data;
   res.json(search_data);
 });
+
+app.post("/set_product_page_product_id", (req, res) => {
+  req.session.product_page_product_id = req.body.id;
+  res.json({ ok: true });
+});
+
+app.get("/get_product_page_product_id", (req, res) => {
+  res.json(req.session.product_page_product_id);
+});
+
+app.post("/get_product_with_id", async (req, res) => {
+  let prod = await Product.findById(req.body.id);
+  res.json(prod);
+});
