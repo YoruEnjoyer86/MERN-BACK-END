@@ -112,7 +112,7 @@ app.post("/api/get_product_image", async (req, res) => {
   let errorMSG =
     "INVALID PRODUCT, COULD NOT FIND PRODUCT IMAGE : " + productDetails.name;
   let foundImage = false;
-  let imageTypes = ["png", "jpeg", "webp", "jpg"];
+  let imageTypes = ["png", "jpeg", "webp", "jpg", "avif"];
   let uri;
   for (let i = 0; i < imageTypes.length; i++) {
     let imagePath = path.join(
