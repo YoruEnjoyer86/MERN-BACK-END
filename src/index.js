@@ -60,29 +60,56 @@ const storageConfiguration = multer.diskStorage({
 
 const upload = multer({ storage: storageConfiguration });
 
-app.post(
-  "/api/add_product",
-  upload.single("file"), //asa tre sa fie numit fisieru trimis, mai intai o sa fie apelata functia pentru a avea setat sellerName si prodName pt numele fisierului
-  async (req, res) => {
-    // console.log(req.file);
-    // console.log("BODY", req.body);
-    const productObject = {
-      name: req.body.name,
-      description: req.body.description,
-      quantity: req.body.quantity,
-      seller: req.body.seller,
-      price: req.body.price,
-      mega_category: req.body.mega_category,
-      subcategory: req.body.subcategory,
-      category: req.body.category,
-    };
-    const productToAdd = new Product(productObject);
-    await productToAdd.save().catch((err) => {
-      return res.json({ ok: false });
+app.post("/add_product_image", async (req, res) => {
+  let ok = true;
+  await upload.single("file")(req, res, (err) => {
+    ok = false;
+  });
+  if (ok === false)
+    return res.status(400).send({
+      message: "❌Error at saving product image" + err,
     });
-    return res.json({ ok: true });
-  }
-);
+  res.status(200).send({
+    message: "✅Product image saved succsessfully",
+  });
+});
+
+app.post("/add_product_to_database", async (req, res) => {
+  // console.log(req.file);
+  // console.log("BODY", req.body);
+  const productObject = {
+    name: req.body.name,
+    description: req.body.description,
+    quantity: req.body.quantity,
+    seller: req.body.seller,
+    price: req.body.price,
+    mega_category: req.body.mega_category,
+    subcategory: req.body.subcategory,
+    category: req.body.category,
+  };
+  const productToAdd = new Product(productObject);
+  await productToAdd.save().catch((err) => {
+    return res.status(400).send({
+      message: "Error at saving product to database❌",
+    });
+  });
+  return res.status(200).send({
+    message: "Product saved to databaase successfully✅",
+    product_id: productToAdd._id,
+  });
+});
+
+app.post("/delete_product_from_database", async (req, res) => {
+  const product_id = req.product_id;
+  await Product.findByIdAndDelete(product_id).catch((err) => {
+    return res.status(400).send({
+      message: err,
+    });
+  });
+  res.status(200).send({
+    message: "✅Product deleted from database successfuly!",
+  });
+});
 
 app.post("/get_products_of_any_type_categoryID", async (req, res) => {
   const categoryType = req.body.categoryType;
@@ -108,16 +135,15 @@ app.post("/get_products_of_any_type_categoryID", async (req, res) => {
 });
 
 app.post("/api/get_product_image", async (req, res) => {
-  const productDetails = req.body.productDetails;
-  let errorMSG =
-    "INVALID PRODUCT, COULD NOT FIND PRODUCT IMAGE : " + productDetails.name;
+  const product_id = req.body.product_id;
+  let errorMSG = "INVALID PRODUCT, COULD NOT FIND PRODUCT IMAGE!";
   let foundImage = false;
   let imageTypes = ["png", "jpeg", "webp", "jpg", "avif"];
   let uri;
   for (let i = 0; i < imageTypes.length; i++) {
     let imagePath = path.join(
       product_images_folder,
-      productDetails.name + "_" + productDetails.seller + "." + imageTypes[i]
+      product_id + "." + imageTypes[i]
     );
     if (!fs.existsSync(imagePath)) continue;
     try {
