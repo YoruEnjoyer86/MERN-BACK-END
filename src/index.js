@@ -159,11 +159,12 @@ app.post("/api/get_product_image", async (req, res) => {
     break;
   }
   if (!foundImage)
-    res.json({
-      ok: false,
-      error: errorMSG,
+    return res.status(444).send({
+      message: errorMSG,
     });
-  else res.json({ ok: true, img: uri });
+  return res.status(200).send({
+    img: uri,
+  });
 });
 
 app.post("/api/sign_up", async (req, res) => {
@@ -423,7 +424,6 @@ app.post("/remove_product_from_cart", async (req, res) => {
 });
 
 app.post("/get_products_with_name_and_categories", async (req, res) => {
-  if (req.body.text.length == 0) return res.json([]);
   let foundObjects = [];
   if (req.body.subcategory != undefined)
     foundObjects = await Product.find({
