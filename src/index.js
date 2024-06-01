@@ -173,6 +173,7 @@ app.post("/api/sign_up", async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
+    user_type: req.body.user_type,
   });
 
   let savedCorrectly = false;
@@ -212,7 +213,8 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.get("/check_connected", (req, res) => {
-  if (req.session.userId) res.json({ ok: true });
+  if (req.session.userId != undefined)
+    res.json({ ok: true, user_id: req.session.userId });
   else res.json({ ok: false });
 });
 
@@ -586,4 +588,18 @@ app.get("/get_product_page_product_id", (req, res) => {
 app.post("/get_product_with_id", async (req, res) => {
   let prod = await Product.findById(req.body.id);
   res.json(prod);
+});
+
+app.post("/fetch_user_by_id", async (req, res) => {
+  let account = await Account.findById(req.body.id);
+  if (account == null)
+    return res
+      .status(444)
+      .send({ message: "FETCH USER BY ID ERROR : ACCOUNT DOES NOT EXIST!" });
+  res.status(200).send(account);
+});
+
+app.get("/get_user_type", async (req, res) => {
+  let account = await Account.findById(req.session.userId);
+  res.status(200).send(account.user_type.toString());
 });

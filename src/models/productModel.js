@@ -14,7 +14,8 @@ const productSchema = new mongoose.Schema({
     required: true,
   },
   seller: {
-    type: String,
+    type: mongoose.Types.ObjectId,
+    ref: "Account",
     required: true,
   },
   price: {
