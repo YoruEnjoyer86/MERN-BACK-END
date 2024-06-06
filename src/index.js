@@ -603,3 +603,44 @@ app.get("/get_user_type", async (req, res) => {
   let account = await Account.findById(req.session.userId);
   res.status(200).send(account.user_type.toString());
 });
+
+app.post("/get_most_sold_products_from_category", async (req, res) => {
+  let type_of_cat = undefined;
+  let cat_id = req.body.cat_id;
+  let num_products =
+    req.body.num_products === undefined ? 3 : req.body.num_products;
+  let found = await MegaCategory.findById(cat_id);
+  type_of_cat = 0;
+  if (found === null) {
+    found = await Category.findById(cat_id);
+    type_of_cat = 1;
+  }
+  if (found === null) {
+    found = await Subcategory.findById(cat_id);
+    type_of_cat = 2;
+  }
+  if (found === null)
+    return res.status(444).send({
+      message:
+        "Error at get_most_sold_products_from_category: Category id is invalid!",
+    });
+  let products = [];
+  switch (type_of_cat) {
+    case 0:
+      products = (await Product.find({ subcategory: cat_id })).filter(
+        (prod, index) => index < num_products
+      );
+      break;
+    case 1:
+      products = (await Product.find({ category: cat_id })).filter(
+        (prod, index) => index < num_products
+      );
+      berak;
+    case 2:
+      products = (await Product.find({ mega_category: cat_id })).filter(
+        (prod, index) => index < num_products
+      );
+      break;
+  }
+  return res.status(200).send(products);
+});
