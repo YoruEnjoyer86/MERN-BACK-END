@@ -11,9 +11,6 @@ const Category = require("./models/category");
 const Subcategory = require("./models/subcategory");
 const fs = require("fs");
 const path = require("path");
-const { error } = require("console");
-const axios = require("axios");
-const FormData = require("form-data");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
@@ -212,7 +209,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/check_connected", (req, res) => {
+app.get("/check_connected", async (req, res) => {
   if (req.session.userId != undefined)
     res.json({ ok: true, user_id: req.session.userId });
   else res.json({ ok: false });
