@@ -632,7 +632,7 @@ app.post("/get_most_sold_products_from_category", async (req, res) => {
       products = (await Product.find({ category: cat_id })).filter(
         (prod, index) => index < num_products
       );
-      berak;
+      break;
     case 2:
       products = (await Product.find({ mega_category: cat_id })).filter(
         (prod, index) => index < num_products
