@@ -19,7 +19,8 @@ const Heap = require("heap");
 
 const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
-const deployed_front_url = "http://ecommerce_bibart_alexandru:5173";
+const deployed_front_url =
+  "http://https://ecommerce-bibart-alexandru.onrender.com:5173";
 
 const app = express();
 app.use(
