@@ -647,3 +647,23 @@ app.post("/get_most_sold_products_from_category", async (req, res) => {
   }
   return res.status(200).send(products);
 });
+
+app.post("/get_image", async (req, res) => {
+  const img_name = req.body.img_name;
+  const image_path = path.join("./public", img_name);
+  if (!fs.existsSync(image_path))
+    return res.status(444).send({ message: "Image does not exist" });
+  try {
+    let image_type = img_name.split(".")[1];
+    let data = fs.readFileSync(image_path);
+    let mime = "image/" + image_type;
+    let encoding = "base64";
+    uri = "data:" + mime + ";" + encoding + "," + data.toString(encoding);
+  } catch (error) {
+    errorMSG =
+      "EROARE LA DESCHIDERE IMAGINE PRODUS(IMAGINEA EXISTA) : " + error;
+  }
+  return res.status(200).send({
+    img: uri,
+  });
+});
