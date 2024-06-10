@@ -225,6 +225,9 @@ app.post("/api/login", async (req, res) => {
   if (account === null) res.send({ ok: false, message: "ACCOUNT NOT FOUND!" });
   else {
     req.session.userId = account._id;
+    console.log(
+      "USERID SESSION VARIABLE AFTER LOGGIN IN : " + req.session.userId
+    );
     res.send({ ok: true });
   }
 });
