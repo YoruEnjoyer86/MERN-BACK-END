@@ -1,6 +1,5 @@
 const express = require("express");
 const database = require("./config/database");
-const eventRoutes = require("./routes/eventRoutes");
 const cors = require("cors");
 const Product = require("./models/productModel");
 const Account = require("./models/accountModel");
@@ -16,12 +15,15 @@ const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const Heap = require("heap");
+const redis = require("redis");
+const RedisStore = require("connect-redis").default;
 
 const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
 const app = express();
+app.use(express.json());
 app.use(
   cors({
     origin: [
@@ -33,18 +35,28 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+
+const redis_client = redis.createClient({
+  password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
+  socket: {
+    host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
+    port: 17956,
+  },
+});
+redis_client.connect().catch(console.error);
+
 //app.use("/events", eventRoutes);
 app.use(cookieParser());
 app.use(
   session({
-    secret: "secret",
+    store: new RedisStore({ client: redis_client }),
+    secret: "sl12qKSs2A",
     resave: false,
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production" ? true : false,
-      maxAge: 1000 * 60 * 60, // e in secunde
-      httpOnly: false,
+      maxAge: 1000 * 60 * 60, // e in ms
+      httpOnly: true,
     },
   })
 );
