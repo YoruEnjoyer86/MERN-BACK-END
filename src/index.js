@@ -58,6 +58,7 @@ app.use(
       maxAge: 1000 * 60 * 60, // e in ms
       httpOnly: false,
       path: "/",
+      sameSite: "none",
     },
   })
 );
