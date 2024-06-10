@@ -225,14 +225,15 @@ app.post("/api/login", async (req, res) => {
   if (account === null) res.send({ ok: false, message: "ACCOUNT NOT FOUND!" });
   else {
     req.session.userId = account._id;
-    console.log(
-      "USERID SESSION VARIABLE AFTER LOGGIN IN : " + req.session.userId
-    );
+    // console.log(
+    //   "USERID SESSION VARIABLE AFTER LOGGIN IN : " + req.session.userId
+    // );
     res.send({ ok: true });
   }
 });
 
 app.get("/check_connected", async (req, res) => {
+  console.log("USERID SESSION VARIABLE IS : " + req.session.userId);
   if (req.session.userId != undefined)
     res.json({ ok: true, user_id: req.session.userId });
   else res.json({ ok: false });
