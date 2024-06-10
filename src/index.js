@@ -22,8 +22,16 @@ const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
+const redis_client = redis.createClient({
+  password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
+  socket: {
+    host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
+    port: 17956,
+  },
+});
+redis_client.connect().catch(console.error);
+
 const app = express();
-app.use(express.json());
 app.use(
   cors({
     origin: [
@@ -35,15 +43,7 @@ app.use(
     credentials: true,
   })
 );
-
-const redis_client = redis.createClient({
-  password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
-  socket: {
-    host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
-    port: 17956,
-  },
-});
-redis_client.connect().catch(console.error);
+app.use(express.json());
 
 //app.use("/events", eventRoutes);
 app.use(cookieParser());
@@ -56,7 +56,7 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === "production" ? true : false,
       maxAge: 1000 * 60 * 60, // e in ms
-      httpOnly: true,
+      httpOnly: false,
     },
   })
 );
