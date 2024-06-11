@@ -3,5 +3,7 @@ const express = require("express");
 const router = express.Router();
 const serverless = require("serverless-http");
 
-app.use("/.netlify/functions/api", router);
+router.get("/", (req, res) => res.send("default route is working!✅✅😁"));
+
+api.use("/api/", router);
 module.exports.handler = serverless(app);
