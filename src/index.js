@@ -1,13 +1,13 @@
 const express = require("express");
-const database = require("../src/config/database");
+const database = require("./config/database");
 const cors = require("cors");
-const Product = require("../src/models/productModel");
-const Account = require("../src/models/accountModel");
-const FavoriteList = require("../src/models/favoriteListModel");
-const ShoppingCart = require("../src/models/shopping_cart");
-const MegaCategory = require("../src/models/megaCategory");
-const Category = require("../src/models/category");
-const Subcategory = require("../src/models/subcategory");
+const Product = require("./models/productModel");
+const Account = require("./models/accountModel");
+const FavoriteList = require("./models/favoriteListModel");
+const ShoppingCart = require("./models/shopping_cart");
+const MegaCategory = require("./models/megaCategory");
+const Category = require("./models/category");
+const Subcategory = require("./models/subcategory");
 const fs = require("fs");
 const path = require("path");
 const session = require("express-session");
@@ -58,7 +58,7 @@ app.use(
       maxAge: 1000 * 60 * 60, // e in ms
       httpOnly: false,
       path: "/",
-      sameSite: "none",
+      // sameSite: "none",
       domain:
         process.env.NODE_ENV === "production"
           ? "https://ecommerce-bibart-alexandru.onrender.com"
