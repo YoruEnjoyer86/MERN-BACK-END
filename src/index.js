@@ -22,45 +22,38 @@ const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
 const app = express();
-// app.use(
-//   cors({
-//     origin: [
-//       process.env.NODE_ENV === "production"
-//         ? deployed_front_url
-//         : local_front_url,
-//     ],
-//     allowedHeaders: [
-//       "Origin",
-//       "Content-Type",
-//       "Accept",
-//       "Authorization",
-//       "X-Request-With",
-//     ],
-//     methods: ["POST", "GET"],
-//     credentials: true,
-//   })
-// );
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? deployed_front_url
+        : local_front_url,
+    methods: [
+      "GET",
+      "HEAD",
+      "PUT",
+      "PATCH",
+      "POST",
+      "DELETE",
+      "OPTIONS",
+      "CONNECT",
+      "TRACE",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Content-Type-Options",
+      "Accept",
+      "X-Requested-With",
+      "Origin",
+      "Access-Control-Request-Method",
+      "Access-Control-Request-Headers",
+    ],
+    credentials: true,
+    maxAge: 7200,
+  })
+);
 app.use(express.json());
-
-app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    process.env.NODE_ENV === "production" ? deployed_front_url : local_front_url
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS,CONNECT,TRACE"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Content-Type-Options, Accept, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  res.setHeader("Access-Control-Allow-Private-Network", true);
-  res.setHeader("Access-Control-Max-Age", 7200);
-
-  next();
-});
 
 //app.use("/events", eventRoutes);
 
