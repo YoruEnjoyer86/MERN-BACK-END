@@ -72,7 +72,7 @@ app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
 
-app.get("/", (req, res) => res.send("Express on Vercel is working!"));
+app.get("/", (req, res) => res.send("default route is working!✅✅😁"));
 
 const storageConfiguration = multer.diskStorage({
   destination: "./product_images",
