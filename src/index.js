@@ -15,24 +15,11 @@ const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const multer = require("multer");
 const Heap = require("heap");
-const redis = require("redis");
-const RedisStore = require("connect-redis").default;
+const jwt = require("jsonwebtoken");
 
 const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
-
-const redis_client = redis.createClient({
-  password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
-  socket: {
-    host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
-    port: 17956,
-  },
-});
-redis_client
-  .connect()
-  .catch(console.error)
-  .then(console.log("Connected to Redis ✅"));
 
 const app = express();
 app.use(
@@ -49,26 +36,6 @@ app.use(
 app.use(express.json());
 
 //app.use("/events", eventRoutes);
-app.use(cookieParser());
-app.use(
-  session({
-    store: new RedisStore({ client: redis_client }),
-    secret: "sl12qKSs2A",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production" ? true : false,
-      maxAge: 1000 * 60 * 60, // e in ms
-      httpOnly: false,
-      path: "/",
-      // sameSite: "none",
-      domain:
-        process.env.NODE_ENV === "production"
-          ? "https://ecommerce-bibart-alexandru.onrender.com"
-          : "",
-    },
-  })
-);
 
 app.get("/", (req, res) => {
   console.log("default route is working 😁✅✅");
@@ -77,6 +44,40 @@ app.get("/", (req, res) => {
 const port = 3001;
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+});
+
+app.get("/check_connected", async (req, res) => {
+  // console.log("in here!");
+  const auth_header = req.headers["authorization"];
+  const token = auth_header && auth_header.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.json({ ok: false });
+    else return res.json({ ok: true, user });
+  });
+});
+
+const authentificate_token = (req, res, next) => {
+  // console.log("AUTHENTIFICATING TOKEN! 😘");
+  const auth_header = req.headers["authorization"];
+  const token = auth_header && auth_header.split(" ")[1]; // o sa returneze 'null' de tip string
+  if (token == "null")
+    return res.status(401).send({ message: "User not authentificated" });
+
+  // console.log("⚠️  TOKEN IS : " + token + "with type" + typeof token);
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (err, user) => {
+    if (err) res.status(403).send({ message: "User authentification invalid" });
+    req.user = user;
+    next();
+  });
+};
+
+app.get("/testam_authentificarea_token", authentificate_token, (req, res) => {
+  res.send({ ok: true });
+});
+
+app.get("/api/verif_token_merge", authentificate_token, (req, res) => {
+  console.log("MERGE VERIF TOKEN, USERUL ESTE : " + req.user.name);
 });
 
 const storageConfiguration = multer.diskStorage({
@@ -103,8 +104,6 @@ app.post("/add_product_image", async (req, res) => {
 });
 
 app.post("/add_product_to_database", async (req, res) => {
-  // console.log(req.file);
-  // console.log("BODY", req.body);
   const productObject = {
     name: req.body.name,
     description: req.body.description,
@@ -222,8 +221,13 @@ app.post("/api/sign_up", async (req, res) => {
   });
 
   if (savedCorrectly) {
-    req.session.userId = newAccount._id;
-    res.send({ ok: true, message: "Sign Up successful!" });
+    const access_token = jwt.sign(
+      {
+        ...newAccount._doc,
+      },
+      process.env.ACCESS_TOKEN_SECRET
+    );
+    res.send({ ok: true, message: "Sign Up successful!", access_token });
   } else res.send({ ok: true, message: message });
 });
 
@@ -235,117 +239,122 @@ app.post("/api/login", async (req, res) => {
 
   if (account === null) res.send({ ok: false, message: "ACCOUNT NOT FOUND!" });
   else {
-    req.session.userId = account._id;
-    // console.log(
-    //   "USERID SESSION VARIABLE AFTER LOGGIN IN : " + req.session.userId
-    // );
-    res.send({ ok: true });
+    const access_token = jwt.sign(
+      {
+        ...account._doc,
+      },
+      process.env.ACCESS_TOKEN_SECRET
+    );
+    res.send({ ok: true, access_token });
   }
 });
 
-app.get("/check_connected", async (req, res) => {
-  // console.log("USERID SESSION VARIABLE IS : " + req.session.userId);
-  if (req.session.userId != undefined)
-    res.json({ ok: true, user_id: req.session.userId });
-  else res.json({ ok: false });
-});
-
-app.get("/profile", async (req, res) => {
-  const accountData = await Account.findById(req.session.userId);
+app.get("/profile", authentificate_token, async (req, res) => {
+  // console.log("hi");
   return res.json({
-    username: accountData.name,
-    email: accountData.email,
-    nickname: accountData.nickname,
-    phone: accountData.phone_number,
+    username: req.user.name,
+    email: req.user.email,
+    nickname: req.user.nickname,
+    phone: req.user.phone_number,
   });
 });
 
-app.get("/logout", (req, res) => {
-  req.session.userId = undefined;
-  res.send("USER LOGGED OUT!");
-});
-
-app.get("/get_favorite_lists", async (req, res) => {
-  let favoriteLists = await FavoriteList.find({ userId: req.session.userId });
+app.get("/get_favorite_lists", authentificate_token, async (req, res) => {
+  let favoriteLists = await FavoriteList.find({ userId: req.user._id });
   if (favoriteLists === null)
     res.json({ ok: false, message: "Favorite lists not found in database." });
   else res.json({ ok: true, lists: favoriteLists });
 });
 
-app.post("/get_products_from_favorite_list", async (req, res) => {
-  const favoriteList = await FavoriteList.findOne({
-    userId: req.session.userId,
-    name: req.body.name,
-  });
-  if (!favoriteList)
-    return res.json({
-      ok: false,
-      message: "Favorite list was not found in database!",
+app.post(
+  "/get_products_from_favorite_list",
+  authentificate_token,
+  async (req, res) => {
+    const favoriteList = await FavoriteList.findOne({
+      userId: req.user._id,
+      name: req.body.name,
     });
-  let products = [];
-  for (let i = 0; i < favoriteList.products.length; i++) {
-    let actualProduct = await Product.findById(favoriteList.products[i]);
-    products.push(actualProduct);
-  }
-  res.json({ ok: true, products });
-});
-
-app.post("/is_product_favorite", async (req, res) => {
-  let list = await FavoriteList.findOne({
-    userId: req.session.userId,
-    name: "Favorite",
-  });
-  if (!list)
-    return res.json({ ok: false, message: "Favorites list not found." });
-  for (let prodId of list.products)
-    if (prodId == req.body.id) return res.json({ ok: true, isFavorite: true });
-  return res.json({ ok: true, isFavorite: false });
-});
-
-app.post("/add_product_to_favorites", async (req, res) => {
-  message = "";
-  let list = await FavoriteList.findOne({
-    userId: req.session.userId,
-    name: "Favorite",
-  });
-  if (!list)
-    return res.json({ ok: false, message: "Favorites list not found." });
-  let newProductsList = list.products;
-  newProductsList.push(mongoose.Types.ObjectId(req.body.id));
-  await list.updateOne({ products: newProductsList }).catch((err) => {
-    message = err;
-  });
-  if (message === "") res.json({ ok: true });
-  else res.json({ ok: false, message });
-});
-
-app.post("/remove_product_from_favorites", async (req, res) => {
-  message = "";
-  let list = await FavoriteList.findOne({
-    userId: req.session.userId,
-    name: "Favorite",
-  });
-  if (!list)
-    return res.json({ ok: false, message: "Favorites list not found." });
-  let newProductsList = [];
-  let indexToRemove = 0;
-  for (let i = 0; i < list.products.length; i++)
-    if (list.products[i] == req.body.id) {
-      indexToRemove = i;
-      break;
+    if (!favoriteList)
+      return res.json({
+        ok: false,
+        message: "Favorite list was not found in database!",
+      });
+    let products = [];
+    for (let i = 0; i < favoriteList.products.length; i++) {
+      let actualProduct = await Product.findById(favoriteList.products[i]);
+      products.push(actualProduct);
     }
-  for (let i = 0; i < list.products.length; i++)
-    if (i != indexToRemove) newProductsList.push(list.products[i]);
-  //console.log(newProductsList);
-  await list.updateOne({ products: newProductsList }).catch((err) => {
-    message = err;
+    res.json({ ok: true, products });
+  }
+);
+
+app.post("/is_product_favorite", authentificate_token, async (req, res) => {
+  let list = await FavoriteList.findOne({
+    userId: req.user._id,
+    name: "Favorite",
   });
-  if (message === "") res.json({ ok: true });
-  else res.json({ ok: false, message });
+  if (!list)
+    return res
+      .status(444)
+      .json({ ok: false, message: "Favorites list not found." });
+  for (let prodId of list.products)
+    if (prodId == req.body.id)
+      return res.status(200).json({ ok: true, isFavorite: true });
+  return res.status(200).json({ ok: true, isFavorite: false });
 });
 
-app.post("/get_products_from_cart", async (req, res) => {
-  const cart = await ShoppingCart.findOne({ userId: req.session.userId });
+app.post(
+  "/add_product_to_favorites",
+  authentificate_token,
+  async (req, res) => {
+    message = "";
+    let list = await FavoriteList.findOne({
+      userId: req.user._id,
+      name: "Favorite",
+    });
+    if (!list)
+      return res.json({ ok: false, message: "Favorites list not found." });
+    let newProductsList = list.products;
+    newProductsList.push(mongoose.Types.ObjectId(req.body.id));
+    await list.updateOne({ products: newProductsList }).catch((err) => {
+      message = err;
+    });
+    if (message === "") res.json({ ok: true });
+    else res.json({ ok: false, message });
+  }
+);
+
+app.post(
+  "/remove_product_from_favorites",
+  authentificate_token,
+  async (req, res) => {
+    message = "";
+    let list = await FavoriteList.findOne({
+      userId: req.user._id,
+      name: "Favorite",
+    });
+    if (!list)
+      return res.json({ ok: false, message: "Favorites list not found." });
+    let newProductsList = [];
+    let indexToRemove = 0;
+    for (let i = 0; i < list.products.length; i++)
+      if (list.products[i] == req.body.id) {
+        indexToRemove = i;
+        break;
+      }
+    for (let i = 0; i < list.products.length; i++)
+      if (i != indexToRemove) newProductsList.push(list.products[i]);
+    //console.log(newProductsList);
+    await list.updateOne({ products: newProductsList }).catch((err) => {
+      message = err;
+    });
+    if (message === "") res.json({ ok: true });
+    else res.json({ ok: false, message });
+  }
+);
+
+app.get("/get_products_from_cart", authentificate_token, async (req, res) => {
+  const cart = await ShoppingCart.findOne({ userId: req.user._id });
   //console.log(cart);
   if (!cart) return res.json({ ok: true, products: [] });
   else {
@@ -378,84 +387,96 @@ app.post("/get_products_from_cart", async (req, res) => {
   }
 });
 
-app.post("/increase_product_quantity_in_cart", async (req, res) => {
-  let cart = await ShoppingCart.findOne({ userId: req.session.userId });
-  if (!cart) {
-    cart = new ShoppingCart({
-      userId: req.session.userId,
-      productsDetails: [],
-    });
-    await cart.save();
-  }
-  //console.log(req.body.id);
-  let alreadyInCart = false;
-  let changeIndex = 0;
-  for (let i = 0; i < cart.productsDetails.length; i++) {
-    if (cart.productsDetails[i].id == req.body.id) {
-      alreadyInCart = true;
-      changeIndex = i;
-      break;
+app.post(
+  "/increase_product_quantity_in_cart",
+  authentificate_token,
+  async (req, res) => {
+    let cart = await ShoppingCart.findOne({ userId: req.user._id });
+    if (!cart) {
+      cart = new ShoppingCart({
+        userId: req.user._id,
+        productsDetails: [],
+      });
+      await cart.save();
+    }
+    //console.log(req.body.id);
+    let alreadyInCart = false;
+    let changeIndex = 0;
+    for (let i = 0; i < cart.productsDetails.length; i++) {
+      if (cart.productsDetails[i].id == req.body.id) {
+        alreadyInCart = true;
+        changeIndex = i;
+        break;
+      }
+    }
+    if (alreadyInCart) {
+      cart.productsDetails[changeIndex].quantity += 1;
+      await cart.save();
+      res.json({ ok: true });
+    } else {
+      cart.productsDetails.push({ id: req.body.id, quantity: 1 });
+      await cart.save();
+      res.json({ ok: true });
     }
   }
-  if (alreadyInCart) {
-    cart.productsDetails[changeIndex].quantity += 1;
-    await cart.save();
-    res.json({ ok: true });
-  } else {
-    cart.productsDetails.push({ id: req.body.id, quantity: 1 });
-    await cart.save();
-    res.json({ ok: true });
-  }
-});
+);
 
-app.post("/decrese_quantity_product_from_cart", async (req, res) => {
-  let cart = await ShoppingCart.findOne({ userId: req.session.userId });
-  if (!cart) return res.json({ ok: true, message: "cart does not exist" });
-  let isInCart = false;
-  let changeIndex = 0;
-  for (let i = 0; i < cart.productsDetails.length; i++) {
-    if (cart.productsDetails[i].id == req.body.id) {
-      isInCart = true;
-      changeIndex = i;
-      break;
+app.post(
+  "/decrese_quantity_product_from_cart",
+  authentificate_token,
+  async (req, res) => {
+    let cart = await ShoppingCart.findOne({ userId: req.user._id });
+    if (!cart) return res.json({ ok: true, message: "cart does not exist" });
+    let isInCart = false;
+    let changeIndex = 0;
+    for (let i = 0; i < cart.productsDetails.length; i++) {
+      if (cart.productsDetails[i].id == req.body.id) {
+        isInCart = true;
+        changeIndex = i;
+        break;
+      }
     }
+    // console.log(req.body.id);
+    if (!isInCart) return res.json({ ok: true, message: "was not in cart" });
+    if (cart.productsDetails[changeIndex].quantity === 1) {
+      for (let i = changeIndex; i < cart.productsDetails.length - 1; i++)
+        cart.productsDetails[i] = cart.productsDetails[i + 1];
+      cart.productsDetails.pop();
+      await cart.save();
+    } else {
+      cart.productsDetails[changeIndex].quantity--;
+      await cart.save();
+    }
+    res.json({ ok: true, message: "decreased it" });
   }
-  // console.log(req.body.id);
-  if (!isInCart) return res.json({ ok: true, message: "was not in cart" });
-  if (cart.productsDetails[changeIndex].quantity === 1) {
+);
+
+app.post(
+  "/remove_product_from_cart",
+  authentificate_token,
+  async (req, res) => {
+    let cart = await ShoppingCart.findOne({ userId: req.user._id });
+    if (!cart) return res.json({ ok: true, message: "cart does not exist" });
+    let isInCart = false;
+    let changeIndex = 0;
+    for (let i = 0; i < cart.productsDetails.length; i++) {
+      if (cart.productsDetails[i].id == req.body.id) {
+        isInCart = true;
+        changeIndex = i;
+        break;
+      }
+    }
+    // console.log(req.body.id);
+    if (!isInCart) return res.json({ ok: true, message: "was not in cart" });
+
     for (let i = changeIndex; i < cart.productsDetails.length - 1; i++)
       cart.productsDetails[i] = cart.productsDetails[i + 1];
     cart.productsDetails.pop();
     await cart.save();
-  } else {
-    cart.productsDetails[changeIndex].quantity--;
-    await cart.save();
+
+    res.json({ ok: true, message: "decreased it" });
   }
-  res.json({ ok: true, message: "decreased it" });
-});
-
-app.post("/remove_product_from_cart", async (req, res) => {
-  let cart = await ShoppingCart.findOne({ userId: req.session.userId });
-  if (!cart) return res.json({ ok: true, message: "cart does not exist" });
-  let isInCart = false;
-  let changeIndex = 0;
-  for (let i = 0; i < cart.productsDetails.length; i++) {
-    if (cart.productsDetails[i].id == req.body.id) {
-      isInCart = true;
-      changeIndex = i;
-      break;
-    }
-  }
-  // console.log(req.body.id);
-  if (!isInCart) return res.json({ ok: true, message: "was not in cart" });
-
-  for (let i = changeIndex; i < cart.productsDetails.length - 1; i++)
-    cart.productsDetails[i] = cart.productsDetails[i + 1];
-  cart.productsDetails.pop();
-  await cart.save();
-
-  res.json({ ok: true, message: "decreased it" });
-});
+);
 
 app.post("/get_products_with_name_and_categories", async (req, res) => {
   let foundObjects = [];
@@ -584,11 +605,7 @@ app.post("/get_category_of_any_type_by_id", async (req, res) => {
   }
 });
 
-app.get("/get_search_data", (req, res) => {
-  return res.json({ search_data: req.session.search_data });
-});
-
-app.post("/set_search_data", async (req, res) => {
+app.post("/process_search_data", async (req, res) => {
   let search_data = req.body.search_data;
   if (search_data.category_of_unknown_type != undefined) {
     let res = await MegaCategory.findById(
@@ -604,17 +621,7 @@ app.post("/set_search_data", async (req, res) => {
     }
     search_data.category_of_unknown_type = undefined;
   }
-  req.session.search_data = req.body.search_data;
   res.json(search_data);
-});
-
-app.post("/set_product_page_product_id", (req, res) => {
-  req.session.product_page_product_id = req.body.id;
-  res.json({ ok: true });
-});
-
-app.get("/get_product_page_product_id", (req, res) => {
-  res.json(req.session.product_page_product_id);
 });
 
 app.post("/get_product_with_id", async (req, res) => {
@@ -631,9 +638,9 @@ app.post("/fetch_user_by_id", async (req, res) => {
   res.status(200).send(account);
 });
 
-app.get("/get_user_type", async (req, res) => {
-  let account = await Account.findById(req.session.userId);
-  res.status(200).send(account.user_type.toString());
+app.get("/get_user_type", authentificate_token, async (req, res) => {
+  // console.log(req.user);
+  res.status(200).send(String(req.user.user_type));
 });
 
 app.post("/get_most_sold_products_from_category", async (req, res) => {
