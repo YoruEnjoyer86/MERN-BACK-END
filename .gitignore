@@ -5,4 +5,4 @@ coverage/
 dist/
 build
 .env
-.vercel
+.netlify
