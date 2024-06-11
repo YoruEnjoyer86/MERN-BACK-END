@@ -24,12 +24,11 @@ const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 const app = express();
 app.use(
   cors({
-    origin: "*",
-    // origin: [
-    //   process.env.NODE_ENV === "production"
-    //     ? deployed_front_url
-    //     : local_front_url,
-    // ],
+    origin: [
+      process.env.NODE_ENV === "production"
+        ? deployed_front_url
+        : local_front_url,
+    ],
     methods: ["POST", "GET"],
     credentials: true,
   })
@@ -40,11 +39,6 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   console.log("default route is working 😁✅✅");
-});
-
-const port = 3001;
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
 });
 
 app.get("/check_connected", async (req, res) => {
@@ -705,4 +699,12 @@ app.post("/get_image", async (req, res) => {
   });
 });
 
-module.exports = app;
+const port = 3001;
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
+console.log(
+  "😒😒Allowed origins:",
+  process.env.NODE_ENV === "production" ? deployed_front_url : local_front_url
+);
