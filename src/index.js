@@ -46,10 +46,9 @@ app.get("/", (req, res) => {
   // console.log("default route is working 😁✅✅");
 });
 
-app.get("/check_connected", async (req, res) => {
+app.post("/check_connected", async (req, res) => {
   // console.log("in here!");
-  const auth_header = req.headers["authorization"];
-  const token = auth_header && auth_header.split(" ")[1];
+  const token = req.body.token;
   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
     if (err) return res.json({ ok: false });
     else return res.json({ ok: true, user });
@@ -58,9 +57,8 @@ app.get("/check_connected", async (req, res) => {
 
 const authentificate_token = (req, res, next) => {
   // console.log("AUTHENTIFICATING TOKEN! 😘");
-  const auth_header = req.headers["authorization"];
-  const token = auth_header && auth_header.split(" ")[1]; // o sa returneze 'null' de tip string
-  if (token == "null")
+  const token = req.body.token;
+  if (token == "null" || token == undefined)
     return res.status(401).send({ message: "User not authentificated" });
 
   // console.log("⚠️  TOKEN IS : " + token + "with type" + typeof token);
@@ -241,7 +239,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.get("/profile", authentificate_token, async (req, res) => {
+app.post("/profile", authentificate_token, async (req, res) => {
   // console.log("hi");
   return res.json({
     username: req.user.name,
@@ -251,7 +249,7 @@ app.get("/profile", authentificate_token, async (req, res) => {
   });
 });
 
-app.get("/get_favorite_lists", authentificate_token, async (req, res) => {
+app.post("/get_favorite_lists", authentificate_token, async (req, res) => {
   let favoriteLists = await FavoriteList.find({ userId: req.user._id });
   if (favoriteLists === null)
     res.json({ ok: false, message: "Favorite lists not found in database." });
@@ -345,7 +343,7 @@ app.post(
   }
 );
 
-app.get("/get_products_from_cart", authentificate_token, async (req, res) => {
+app.post("/get_products_from_cart", authentificate_token, async (req, res) => {
   const cart = await ShoppingCart.findOne({ userId: req.user._id });
   //console.log(cart);
   if (!cart) return res.json({ ok: true, products: [] });
@@ -634,7 +632,7 @@ app.post("/fetch_user_by_id", async (req, res) => {
   res.status(200).send(account);
 });
 
-app.get("/get_user_type", authentificate_token, async (req, res) => {
+app.post("/get_user_type", authentificate_token, async (req, res) => {
   // console.log(req.user);
   res.status(200).send(String(req.user.user_type));
 });
