@@ -6,8 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "mocha src/mocha_tests",
-    "build": "echo buildingg"
+    "test": "mocha src/mocha_tests"
   },
   "keywords": [],
   "author": "",

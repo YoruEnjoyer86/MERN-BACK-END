@@ -22,14 +22,17 @@ const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
-// const redis_client = redis.createClient({
-//   password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
-//   socket: {
-//     host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
-//     port: 17956,
-//   },
-// });
-// redis_client.connect().catch(console.error);
+const redis_client = redis.createClient({
+  password: "Rem6esEgPuipDke1oT2clngNef2LJlun",
+  socket: {
+    host: "redis-17956.c250.eu-central-1-1.ec2.redns.redis-cloud.com",
+    port: 17956,
+  },
+});
+redis_client
+  .connect()
+  .catch(console.error)
+  .then(console.log("Connected to Redis ✅"));
 
 const app = express();
 app.use(
@@ -49,7 +52,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   session({
-    // store: new RedisStore({ client: redis_client }),
+    store: new RedisStore({ client: redis_client }),
     secret: "sl12qKSs2A",
     resave: false,
     saveUninitialized: false,
