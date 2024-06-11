@@ -38,21 +38,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Set preflight
-app.options("*", (req, res) => {
-  console.log("preflight");
-  if (
-    req.headers.origin === deployed_front_url &&
-    allowMethods.includes(req.headers["access-control-request-method"]) &&
-    allowHeaders.includes(req.headers["access-control-request-headers"])
-  ) {
-    console.log("pass");
-    return res.status(204).send();
-  } else {
-    console.log("fail");
-  }
-});
-
 app.use(express.json());
 
 //app.use("/events", eventRoutes);
@@ -86,14 +71,6 @@ const authentificate_token = (req, res, next) => {
     next();
   });
 };
-
-app.get("/testam_authentificarea_token", authentificate_token, (req, res) => {
-  res.send({ ok: true });
-});
-
-app.get("/api/verif_token_merge", authentificate_token, (req, res) => {
-  console.log("MERGE VERIF TOKEN, USERUL ESTE : " + req.user.name);
-});
 
 const storageConfiguration = multer.diskStorage({
   destination: "./product_images",
