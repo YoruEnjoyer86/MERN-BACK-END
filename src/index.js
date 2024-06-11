@@ -42,7 +42,7 @@ app.use(express.json());
 //app.use("/events", eventRoutes);
 
 app.get("/", (req, res) => {
-  console.log("default route is working 😁✅✅");
+  // console.log("default route is working 😁✅✅");
 });
 
 app.get("/check_connected", async (req, res) => {
