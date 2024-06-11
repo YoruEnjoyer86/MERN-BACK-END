@@ -32,17 +32,17 @@ const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 // redis_client.connect().catch(console.error);
 
 const app = express();
-app.use(
-  cors({
-    origin: [
-      process.env.NODE_ENV === "production"
-        ? deployed_front_url
-        : local_front_url,
-    ],
-    methods: ["POST", "GET"],
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: [
+//       process.env.NODE_ENV === "production"
+//         ? deployed_front_url
+//         : local_front_url,
+//     ],
+//     methods: ["POST", "GET"],
+//     credentials: true,
+//   })
+// );
 app.use(express.json());
 
 //app.use("/events", eventRoutes);
