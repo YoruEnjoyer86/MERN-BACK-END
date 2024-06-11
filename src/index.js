@@ -29,7 +29,13 @@ app.use(
         ? deployed_front_url
         : local_front_url,
     ],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: [
+      "Origin",
+      "Content-Type",
+      "Accept",
+      "Authorization",
+      "X-Request-With",
+    ],
     methods: ["POST", "GET"],
     credentials: true,
   })
