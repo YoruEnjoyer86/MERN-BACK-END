@@ -29,6 +29,7 @@ app.use(
         ? deployed_front_url
         : local_front_url,
     ],
+    allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["POST", "GET"],
     credentials: true,
   })
