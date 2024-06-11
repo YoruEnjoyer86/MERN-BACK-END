@@ -15,36 +15,28 @@ const mongoose = require("mongoose");
 const multer = require("multer");
 const Heap = require("heap");
 const jwt = require("jsonwebtoken");
+const cors = require("cors");
 
 const product_images_folder = "./product_images";
 const local_front_url = "http://localhost:5173";
 const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
 const app = express();
-app.use((req, res, next) => {
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    process.env.NODE_ENV === "production" ? deployed_front_url : local_front_url
-  );
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, X-Content-Type-Options, Accept, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
-  );
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  res.setHeader("Access-Control-Allow-Private-Network", true);
-  res.setHeader("Access-Control-Max-Age", 7200);
-
-  next();
-});
+app.use(
+  cors({
+    origin: [
+      process.env.NODE_ENV === "production"
+        ? deployed_front_url
+        : local_front_url,
+    ],
+    methods: ["POST", "GET"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
 //app.use("/events", eventRoutes);
-
-app.get("/", (req, res) => {
-  // console.log("default route is working 😁✅✅");
-});
 
 app.post("/check_connected", async (req, res) => {
   // console.log("in here!");
