@@ -7,7 +7,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "mocha src/mocha_tests",
-    "vercel-build" : "echo vercel is building"
+    "build": "node src/index.js"
   },
   "keywords": [],
   "author": "",
