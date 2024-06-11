@@ -24,11 +24,12 @@ const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 const app = express();
 app.use(
   cors({
-    origin: [
-      process.env.NODE_ENV === "production"
-        ? deployed_front_url
-        : local_front_url,
-    ],
+    origin: "*",
+    // origin: [
+    //   process.env.NODE_ENV === "production"
+    //     ? deployed_front_url
+    //     : local_front_url,
+    // ],
     methods: ["POST", "GET"],
     credentials: true,
   })
