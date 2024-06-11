@@ -1,13 +1,13 @@
 const express = require("express");
-const database = require("./config/database");
+const database = require("../src/config/database");
 const cors = require("cors");
-const Product = require("./models/productModel");
-const Account = require("./models/accountModel");
-const FavoriteList = require("./models/favoriteListModel");
-const ShoppingCart = require("./models/shopping_cart");
-const MegaCategory = require("./models/megaCategory");
-const Category = require("./models/category");
-const Subcategory = require("./models/subcategory");
+const Product = require("../src/models/productModel");
+const Account = require("../src/models/accountModel");
+const FavoriteList = require("../src/models/favoriteListModel");
+const ShoppingCart = require("../src/models/shopping_cart");
+const MegaCategory = require("../src/models/megaCategory");
+const Category = require("../src/models/category");
+const Subcategory = require("../src/models/subcategory");
 const fs = require("fs");
 const path = require("path");
 const session = require("express-session");
@@ -71,6 +71,8 @@ const port = 3001;
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
+
+app.get("/", (req, res) => res.send("Express on Vercel is working!"));
 
 const storageConfiguration = multer.diskStorage({
   destination: "./product_images",
@@ -237,7 +239,7 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.get("/check_connected", async (req, res) => {
-  console.log("USERID SESSION VARIABLE IS : " + req.session.userId);
+  // console.log("USERID SESSION VARIABLE IS : " + req.session.userId);
   if (req.session.userId != undefined)
     res.json({ ok: true, user_id: req.session.userId });
   else res.json({ ok: false });

@@ -6,3 +6,4 @@ dist/
 build
 .env
 vercel.json
+.vercel
