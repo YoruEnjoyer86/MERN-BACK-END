@@ -67,12 +67,14 @@ app.use(
   })
 );
 
+app.get("/", (req, res) => {
+  console.log("default route is working 😁✅✅");
+});
+
 const port = 3001;
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });
-
-app.get("/", (req, res) => res.send("default route is working!✅✅😁"));
 
 const storageConfiguration = multer.diskStorage({
   destination: "./product_images",
