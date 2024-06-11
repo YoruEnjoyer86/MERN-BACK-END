@@ -1,6 +1,5 @@
 const express = require("express");
 const database = require("./config/database");
-const cors = require("cors");
 const Product = require("./models/productModel");
 const Account = require("./models/accountModel");
 const FavoriteList = require("./models/favoriteListModel");
@@ -23,7 +22,10 @@ const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 
 const app = express();
 app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://your-frontend.com");
+  res.setHeader(
+    "Access-Control-Allow-Origin",
+    process.env.NODE_ENV === "production" ? deployed_front_url : local_front_url
+  );
   res.setHeader("Access-Control-Allow-Methods", "GET,POST");
   res.setHeader(
     "Access-Control-Allow-Headers",
@@ -31,7 +33,6 @@ app.use((req, res, next) => {
   );
   res.setHeader("Access-Control-Allow-Credentials", true);
   res.setHeader("Access-Control-Allow-Private-Network", true);
-  //  Firefox caps this at 24 hours (86400 seconds). Chromium (starting in v76) caps at 2 hours (7200 seconds). The default value is 5 seconds.
   res.setHeader("Access-Control-Max-Age", 7200);
 
   next();
@@ -582,8 +583,12 @@ app.post("/get_search_results", async (req, res) => {
 });
 
 app.post("/get_mega_categories", async (req, res) => {
-  let mega_categories = await MegaCategory.find().exec();
-  res.json({ megaCategories: mega_categories });
+  try {
+    let mega_categories = await MegaCategory.find();
+    return res.json({ megaCategories: mega_categories });
+  } catch (err) {
+    res.status(444).send({ message: "database error at get_mega_categories" });
+  }
 });
 
 app.post("/get_categories", async (req, res) => {
