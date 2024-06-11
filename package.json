@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "dev": "nodemon api/index.js",
-    "test": "mocha src/mocha_tests"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "mocha src/mocha_tests",
+    "vercel-build" : "echo vercel is building"
   },
   "keywords": [],
   "author": "",
