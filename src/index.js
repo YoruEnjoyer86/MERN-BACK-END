@@ -24,10 +24,7 @@ const deployed_front_url = "https://ecommerce-bibart-alexandru.onrender.com";
 const app = express();
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "https://your-frontend.com");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS,CONNECT,TRACE"
-  );
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST");
   res.setHeader(
     "Access-Control-Allow-Headers",
     "Content-Type, Authorization, X-Content-Type-Options, Accept, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers"
@@ -38,20 +35,6 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Max-Age", 7200);
 
   next();
-});
-
-app.options("*", (req, res) => {
-  // console.log("preflight");
-  if (
-    req.headers.origin === deployed_front_url &&
-    allowMethods.includes(req.headers["access-control-request-method"]) &&
-    allowHeaders.includes(req.headers["access-control-request-headers"])
-  ) {
-    console.log("pass");
-    return res.status(204).send();
-  } else {
-    console.log("fail");
-  }
 });
 
 app.use(express.json());
