@@ -58,7 +58,7 @@ app.use(
       maxAge: 1000 * 60 * 60, // e in ms
       httpOnly: false,
       path: "/",
-      sameSite: "strict",
+      sameSite: "none",
       domain:
         process.env.NODE_ENV === "production"
           ? "https://ecommerce-bibart-alexandru.onrender.com"
