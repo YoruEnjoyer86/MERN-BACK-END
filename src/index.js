@@ -59,6 +59,10 @@ app.use(
       httpOnly: false,
       path: "/",
       sameSite: "strict",
+      domain:
+        process.env.NODE_ENV === "production"
+          ? "https://ecommerce-bibart-alexandru.onrender.com"
+          : "",
     },
   })
 );
