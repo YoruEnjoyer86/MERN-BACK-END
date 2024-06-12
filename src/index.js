@@ -624,11 +624,9 @@ app.post("/fetch_user_by_id", async (req, res) => {
   res.status(200).send(account);
 });
 
-app.post("/get_user_type", async (req, res) => {
+app.post("/get_user_type", authentificate_token, async (req, res) => {
   // console.log(req.user);
-  // res.status(200).send(String(req.user.user_type));
-  console.log("FETCHED USER TYPE!😘👌");
-  res.status(200).send("0");
+  res.status(200).send(String(req.user.user_type));
 });
 
 app.post("/get_most_sold_products_from_category", async (req, res) => {
